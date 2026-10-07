@@ -1,6 +1,7 @@
 import bpy, math, os
 from mathutils import Vector
 ROOT=os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+WEB=os.path.join(ROOT,'docs' if os.path.isdir(os.path.join(ROOT,'docs')) else 'dist')
 bpy.ops.object.select_all(action='SELECT'); bpy.ops.object.delete(use_global=False)
 def mat(n,c,metal=0):
  m=bpy.data.materials.new(n); m.diffuse_color=(*c,1); m.use_nodes=True
@@ -38,8 +39,9 @@ def bell(n,p,rad,length,m):
 names=['harp','violin','cello','flute','clarinet','bassoon','horn','trombone','timpani','cymbals']
 colors=[(1,.69,.3),(.98,.4,.5),(.66,.47,.9),(.25,.82,.79),(.4,.55,.98),(.57,.72,.4),(1,.78,.29),(.98,.5,.25),(.3,.66,.94),(.94,.62,.79)]
 def spot(i):
- a=-math.pi/2+i*math.pi/9
- return (7.8*math.sin(a),-1.4+5.2*math.cos(a),.15)
+ x=(i-4.5)*2.55
+ # Equal horizontal spacing prevents projected overlap at the arc's ends.
+ return (x,3.8-4.1*(x/11.475)**2,.15)
 for i,n in enumerate(names):
  parent=bpy.data.objects.new('moko_'+n,None);bpy.context.collection.objects.link(parent)
  cm=mat(n+' color',colors[i]); parent.location=spot(i)
@@ -93,16 +95,16 @@ for i,n in enumerate(names):
    o=cyl('cymbal',(x,-.8,1),.4,.035,gold);o.rotation_euler=(math.pi/2,0,-x*.8)
    ball('cymbal boss',(x,-.85,1),(.1,.065,.1),gold)
 parent=None
-cyl('island',(0,0,-.28),1,.45,sea).scale=(9.3,5.7,1)
-cyl('turquoise rim',(0,0,-.48),1,.10,rim).scale=(9.4,5.8,1)
+cyl('island',(0,0,-.28),1,.45,sea).scale=(12.9,5.7,1)
+cyl('turquoise rim',(0,0,-.48),1,.10,rim).scale=(13,5.8,1)
 for i in range(10):
  o=cyl('podium_'+names[i],(spot(i)[0],spot(i)[1],.02),1.13,.18,cream)
 world=bpy.context.scene.world;world.color=(.06,.12,.17)
 for name,pos,power,size in [('key',(2,-8,12),1800,8),('fill',(-7,-2,8),1000,7),('rim',(3,7,10),1700,6)]:
  bpy.ops.object.light_add(type='AREA',location=pos);o=bpy.context.object;o.name=name;o.data.energy=power;o.data.shape='DISK';o.data.size=size;o.rotation_euler=(Vector((0,0,0))-o.location).to_track_quat('-Z','Y').to_euler()
-bpy.ops.object.camera_add(location=(9,-18,14));cam=bpy.context.object;cam.rotation_euler=(Vector((0,0,.5))-cam.location).to_track_quat('-Z','Y').to_euler();cam.data.type='ORTHO';cam.data.ortho_scale=21;bpy.context.scene.camera=cam
+bpy.ops.object.camera_add(location=(0,-20,16));cam=bpy.context.object;cam.rotation_euler=(Vector((0,0,.5))-cam.location).to_track_quat('-Z','Y').to_euler();cam.data.type='ORTHO';cam.data.ortho_scale=28;bpy.context.scene.camera=cam
 scene=bpy.context.scene;scene.render.engine='CYCLES';scene.cycles.samples=24;scene.render.resolution_x=1440;scene.render.resolution_y=1000;scene.render.resolution_percentage=100
 scene.world.use_nodes=True;scene.world.node_tree.nodes['Background'].inputs[0].default_value=(.055,.15,.2,1)
 bpy.ops.wm.save_as_mainfile(filepath=os.path.join(ROOT,'blender','moko-band.blend'))
-bpy.ops.export_scene.gltf(filepath=os.path.join(ROOT,'dist','assets','moko-band.glb'),export_format='GLB',export_cameras=False,export_lights=False)
+bpy.ops.export_scene.gltf(filepath=os.path.join(WEB,'assets','moko-band.glb'),export_format='GLB',export_cameras=False,export_lights=False)
 scene.render.filepath=os.path.join(ROOT,'blender','band-preview.png');bpy.ops.render.render(write_still=True)

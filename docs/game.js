@@ -12,7 +12,7 @@ let state='ready',score=0,combo=0,mistakes=0,index=0,notes=[],duration=327.6,rea
 const windowSize=.58,preview=1.45;
 const scene=new THREE.Scene();scene.fog=new THREE.Fog(0xa9dce2,28,90);
 const renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true});renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.22;
-const camera=new THREE.OrthographicCamera(-11,11,8,-8,.1,120);camera.position.set(0,12,18);camera.lookAt(0,.2,0);
+const camera=new THREE.OrthographicCamera(-11,11,8,-8,.1,120);camera.position.set(0,15,19);camera.lookAt(0,.2,0);
 scene.add(new THREE.HemisphereLight(0xe5ffff,0x548282,2.4));const sun=new THREE.DirectionalLight(0xfff1d4,3);sun.position.set(-5,10,9);scene.add(sun);const rim=new THREE.DirectionalLight(0xd0efff,1.5);rim.position.set(8,5,-6);scene.add(rim);
 const water=new THREE.Mesh(new THREE.PlaneGeometry(180,180),new THREE.MeshStandardMaterial({color:0x94cdd5,roughness:.55,metalness:.15}));water.rotation.x=-Math.PI/2;water.position.y=-.68;scene.add(water);
 // Wide, translucent rings form ripples around the island.
@@ -24,11 +24,11 @@ new GLTFLoader().load('./assets/moko-band.glb',g=>{
  ids.forEach((id,i)=>{
   const root=band.getObjectByName('moko_'+id);if(!root)throw Error('缺少角色 '+id);roots[i]=root;bases[i]=root.position.clone();materials[i]=[];
   root.traverse(o=>{if(o.isMesh){o.userData.member=i;o.material=o.material.clone();materials[i].push(o.material);}});
-  const ring=new THREE.Mesh(new THREE.RingGeometry(.87,1.05,64),new THREE.MeshBasicMaterial({color:0xffdb86,transparent:true,opacity:0,side:THREE.DoubleSide}));ring.rotation.x=-Math.PI/2;ring.position.set(root.position.x,.145,root.position.z);scene.add(ring);rings[i]=ring;
+  const ring=new THREE.Mesh(new THREE.RingGeometry(.84,1,64),new THREE.MeshBasicMaterial({color:0xffdb86,transparent:true,opacity:0,side:THREE.DoubleSide}));ring.rotation.x=-Math.PI/2;ring.position.set(root.position.x,.145,root.position.z);scene.add(ring);rings[i]=ring;
   const label=document.createElement('button');label.className='moko-label';label.innerHTML=icon(id);label.title=names[i];label.setAttribute('aria-label','演奏'+names[i]);label.addEventListener('click',()=>hit(i));$('labels').appendChild(label);labels[i]=label;
  });readyModel=true;$('loading').style.display='none';unlock();resize();
 },undefined,e=>{$('loading').textContent='乐队模型未能加载，请刷新重试。';console.error(e);});
-function resize(){const w=wrap.clientWidth,h=wrap.clientHeight;renderer.setSize(w,h,false);const aspect=w/h;const span=aspect<1.25?10.2:10.4;camera.left=-span;camera.right=span;camera.top=span/aspect;camera.bottom=-span/aspect;camera.updateProjectionMatrix();}
+function resize(){const w=wrap.clientWidth,h=wrap.clientHeight;renderer.setSize(w,h,false);const aspect=w/h;const span=aspect<1.25?13.6:13.8;camera.left=-span;camera.right=span;camera.top=span/aspect;camera.bottom=-span/aspect;camera.updateProjectionMatrix();}
 new ResizeObserver(resize).observe(wrap);
 function unlock(){if(readyModel&&readyAudio){$('play').disabled=false;$('play').textContent='开始演奏';$('restart').disabled=false;}}
 function chartFallback(){return Array.from({length:Math.floor((duration-5)/2.1)},(_,j)=>({time:3+j*2.1,member:pools[Math.min(4,Math.floor((3+j*2.1)/duration*5))][j%pools[Math.min(4,Math.floor((3+j*2.1)/duration*5))].length]}));}
@@ -57,7 +57,7 @@ function frame(now){requestAnimationFrame(frame);const t=music.currentTime;
  const note=notes[index],upcoming=state==='playing'&&note&&note.time-t<=preview;
  if(state==='playing'||state==='paused'){$('targetName').textContent=upcoming?names[note.member]:state==='paused'?'演奏已暂停':'等待下一拍';$('targetFamily').textContent=upcoming?'跟随光圈，挥动指挥棒':'跟随音乐，等待光圈';$('cueIcon').innerHTML=upcoming?icon(ids[note.member]):'♫';$('countdownBar').style.width=upcoming?`${Math.max(0,Math.min(1,1-(note.time-t)/preview))*100}%`:'0%';}
  $('elapsed').textContent=format(t);$('progressFill').style.width=`${Math.min(100,t/duration*100)}%`;$('chapter').textContent=t>0?`第 ${Math.min(5,Math.floor(t/duration*5)+1)} 乐章 · ${chapters[Math.min(4,Math.floor(t/duration*5))]}`:'序幕 · 等待指挥';
- roots.forEach((root,i)=>{const active=upcoming&&note.member===i;const pop=root.userData.hitUntil>now;root.position.y=bases[i].y+(state==='playing'?Math.sin(now*.003+i)*.035:0)+(pop?.14:0);root.rotation.z=state==='playing'?Math.sin(now*.002+i)*.025:0;rings[i].material.opacity=active?.8:0;if(active){const s=1+Math.max(0,note.time-t)/preview*.6;rings[i].scale.set(s,s,1);}materials[i].forEach(m=>{if(m.emissive){m.emissive.setHex(active||pop?0x614c19:0);m.emissiveIntensity=active?.2:pop?.4:0;}});labels[i].classList.toggle('active',!!active);projectPoint.set(root.position.x,root.position.y-.08,root.position.z+1.25).project(camera);labels[i].style.left=`${(projectPoint.x*.5+.5)*wrap.clientWidth}px`;labels[i].style.top=`${(-projectPoint.y*.5+.5)*wrap.clientHeight}px`;});
+ roots.forEach((root,i)=>{const active=upcoming&&note.member===i;const pop=root.userData.hitUntil>now;root.position.y=bases[i].y+(state==='playing'?Math.sin(now*.003+i)*.035:0)+(pop?.14:0);root.rotation.z=state==='playing'?Math.sin(now*.002+i)*.025:0;rings[i].material.opacity=active?.8:0;if(active){const s=1+Math.max(0,note.time-t)/preview*.25;rings[i].scale.set(s,s,1);}materials[i].forEach(m=>{if(m.emissive){m.emissive.setHex(active||pop?0x614c19:0);m.emissiveIntensity=active?.2:pop?.4:0;}});labels[i].classList.toggle('active',!!active);projectPoint.set(root.position.x,root.position.y-.08,root.position.z+1.25).project(camera);labels[i].style.left=`${(projectPoint.x*.5+.5)*wrap.clientWidth}px`;labels[i].style.top=`${(-projectPoint.y*.5+.5)*wrap.clientHeight}px`;});
  ripples.forEach((r,i)=>{const s=1+Math.sin(now*.00035+i)*.03;r.scale.set(s,.68*s,1);});renderer.render(scene,camera);
 }
 resize();requestAnimationFrame(frame);
