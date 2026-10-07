@@ -62,6 +62,6 @@ python3 serve.py
 /Applications/Blender.app/Contents/MacOS/Blender -b --python blender/build_band.py
 ```
 
-前端 Three.js 0.170.0 依赖已随项目保存，许可证在 `docs/assets/THREE-LICENSE.txt`，运行无需 CDN。静态网站配置在 `.openai/hosting.json`，默认私有发布。
+前端 Three.js 0.170.0 依赖已随项目保存，许可证在 `docs/assets/THREE-LICENSE.txt`，运行无需 CDN。GitHub Pages 从 main 分支的 docs 目录发布，游戏和视频公开可访问。
 
-`analyze-audio.cjs` 与 `verify-game.cjs` 为本次构建的分析和验证脚本，使用本机 bundled Playwright 与 Chrome。重跑需要对应运行环境。原音乐仅随本项目使用；分享范围由使用者决定。
+Gameplay 为实际浏览器录屏，共 42 秒，H.264 视频、AAC 立体声音频，包含原曲、实际错误噪声和内嵌中文玩法字幕。`docs/gameplay/玩法字幕.srt` 提供独立字幕。原音乐由用户提供。
