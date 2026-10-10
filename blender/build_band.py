@@ -42,20 +42,55 @@ def spot(i):
  x=(i-4.5)*2.55
  # Equal horizontal spacing prevents projected overlap at the arc's ends.
  return (x,3.8-4.1*(x/11.475)**2,.15)
+# Reuse the running game's six detailed character silhouettes.
+prototypes={}
+for style in ['heartsping','kikiping','gogoping','chachaping','lalaping','yuanbaoping']:
+ before=set(bpy.data.objects)
+ bpy.ops.import_scene.gltf(filepath=os.path.join(ROOT,'blender','reference-models',style+'.glb'))
+ imported=set(bpy.data.objects)-before
+ meshes=[o for o in imported if o.type=='MESH']
+ points=[o.matrix_world @ Vector(c) for o in meshes for c in o.bound_box]
+ low=min(v.z for v in points); high=max(v.z for v in points)
+ prototypes[style]=[(o.name,o.data,o.matrix_world.copy(),low,2.55/(high-low)) for o in meshes]
+ for o in imported:bpy.data.objects.remove(o,do_unlink=True)
+styles=['heartsping','kikiping','lalaping','chachaping','yuanbaoping','chachaping','gogoping','heartsping','kikiping','lalaping']
+# Four new friends: sky, sunset, peach and pearl, with distinctive forehead emblems.
+variants={5:('芽芽',(.22,.76,.71),'leaf'),6:('曦曦',(1,.61,.28),'sun'),7:('桃桃',(1,.49,.65),'heart'),9:('珠珠',(.54,.70,1),'pearl')}
 for i,n in enumerate(names):
  parent=bpy.data.objects.new('moko_'+n,None);bpy.context.collection.objects.link(parent)
- cm=mat(n+' color',colors[i]); parent.location=spot(i)
- parent.rotation_euler[2]=-(-math.pi/2+i*math.pi/9)*.22
- ball('body',(0,0,.95),(.62,.44,.72),cm);ball('face',(0,-.13,1.85),(.65,.49,.61),cm)
- ball('muzzle',(0,-.52,1.73),(.4,.055,.23),cream)
- for side in [-1,1]:
-  ball('eye',(side*.225,-.569,1.97),(.073,.044,.09),ink);ball('eye sparkle',(side*.225-.015,-.61,2.005),(.019,.011,.021),white)
-  ball('cheek',(side*.43,-.526,1.76),(.095,.025,.054),pink)
-  ball('foot',(side*.29,-.12,.22),(.23,.36,.18),cream)
-  ball('ear',(side*.49,-.015,2.26),(.2,.19,.3),cm)
-  ball('hand',(side*.63,-.36,1.04),(.17,.19,.2),cream)
- tube('smile',[(-.07,-.584,1.74),(0,-.6,1.70),(.07,-.584,1.74)],.018,ink)
- cyl('sailor cap',(0,0,2.39),.41,.15,cream);cyl('cap stripe',(0,0,2.33),.42,.07,sea)
+ parent.location=spot(i);parent.rotation_euler[2]=-(-math.pi/2+i*math.pi/9)*.22
+ variant=variants.get(i)
+ for original,data,matrix,low,factor in prototypes[styles[i]]:
+  if any(t in original.lower() for t in ['lollipop','candy spiral','microphone','magic wand']):continue
+  o=bpy.data.objects.new(original,data.copy() if variant else data);bpy.context.collection.objects.link(o)
+  factor*=1.10 if i==4 else 1
+  o.matrix_world=matrix;o.location.z-=low;o.location*=factor;o.scale*=factor
+  # Imported meshes are flattened under the musician root for reliable picking.
+  center=sum((o.matrix_world @ Vector(c) for c in o.bound_box),Vector())/8
+  ishead=center.z>1.45
+  o.name=('face_' if ishead else 'hand_' if any(t in original.lower() for t in ['arm','paw','hand']) else 'body_')+original
+  o.parent=parent
+  if variant:
+   for j,m in enumerate(o.data.materials):
+    label=m.name.lower()
+    if any(t in label for t in ['hair','green','purple','pink','golden fur','body yellow','orange']):
+     copy=m.copy();copy.diffuse_color=(*variant[1],1)
+     if copy.use_nodes:copy.node_tree.nodes.get('Principled BSDF').inputs['Base Color'].default_value=(*variant[1],1)
+     o.data.materials[j]=copy
+ if variant:
+  label,color,motif=variant; accent=mat(label+' emblem',color)
+  if motif=='leaf':
+   o=ball('face leaf crest',(0,-.30,2.55),(.13,.07,.26),accent);o.rotation_euler[1]=-.4
+   ball('face leaf crest',(.15,-.29,2.54),(.12,.07,.2),gold)
+  elif motif=='sun':
+   ball('face sun jewel',(0,-.52,2.24),(.14,.07,.14),gold)
+   for k in range(8):
+    t=k*math.pi/4;ball('face sun ray',(.22*math.cos(t),-.49,2.24+.22*math.sin(t)),(.035,.035,.035),gold)
+  elif motif=='heart':
+   for x in [-.08,.08]:ball('face peach heart',(x,-.46,2.36),(.12,.07,.13),pink)
+   ball('face peach heart',(0,-.46,2.26),(.13,.065,.12),pink)
+  else:
+   for x in [-.2,0,.2]:ball('face pearl crown',(x,-.24,2.60-abs(x)*.3),(.085,.085,.085),white)
  # Distinct, physically readable instrument silhouettes
  if n=='flute':
   line('flute',(-.9,-.73,1.32),(.92,-.73,1.32),.065,silver)
